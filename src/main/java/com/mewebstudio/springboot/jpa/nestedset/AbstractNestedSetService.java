@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 public abstract class AbstractNestedSetService<T extends INestedSetNode<ID>, ID> {
     private static final int TEMP_OFFSET = Integer.MIN_VALUE;
 
+    /**
+     * The repository to be used for database operations.
+     */
     protected final JpaNestedSetRepository<T, ID> repository;
 
     /**
@@ -136,6 +139,13 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID>, ID>
             .toList());
     }
 
+    /**
+     * Move a node in the tree.
+     *
+     * @param node      The node to be moved.
+     * @param direction The direction in which the node will be moved (up or down).
+     * @return T The updated node.
+     */
     @Transactional
     protected T moveNode(T node, MoveNodeDirection direction) {
         ID parentId = node.getParent() != null ? node.getParent().getId() : null;
