@@ -41,10 +41,33 @@ It is designed to be extended and adapted for any entity that implements the `IN
 
 ## 🚀 Usage
 
-### 1. Extend `INestedSetNode<ID>`
-
+### 1. Example entity class `INestedSetNode<ID>`
 ```java
 @Entity
 public class Category implements INestedSetNode<Long> {
     // implement getId, getLeft, getRight, getParent, etc.
 }
+```
+
+### 2. Example repository interface
+```java
+public interface CategoryRepository extends JpaNestedSetRepository<Category, String> {
+}
+```
+
+### 3. Example service class `INestedSetNode<ID>`
+```java
+// Example service class
+@Service
+public class CategoryService extends AbstractNestedSetService<Category, String> {
+    private final CategoryRepository categoryRepository;
+
+    public CategoryService(CategoryRepository categoryRepository) {
+        super(categoryRepository);
+        this.categoryRepository = categoryRepository;
+    }
+
+    // ...
+}
+
+```
