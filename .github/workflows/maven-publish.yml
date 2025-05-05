@@ -25,6 +25,12 @@ jobs:
         run: |
           rm -rf ~/.gnupg
 
+      - name: Start gpg-agent
+        run: |
+          echo "Starting gpg-agent..."
+          gpgconf --launch gpg-agent
+        shell: bash
+
       - name: Import GPG key
         run: |
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
@@ -42,7 +48,7 @@ jobs:
         run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }}
+        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }} -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }}
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
