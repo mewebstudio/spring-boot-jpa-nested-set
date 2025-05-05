@@ -41,10 +41,12 @@ jobs:
       - name: Set GPG keyname
         run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
 
-      - name: Set default GPG key
+      - name: Set Default GPG Key
         run: |
-          gpg --default-key "$GPG_KEYNAME"
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --default-key "$GPG_KEYNAME" --list-secret-keys
         env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
 
       - name: Set version
