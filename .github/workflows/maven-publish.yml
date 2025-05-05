@@ -42,7 +42,8 @@ jobs:
 
     - name: Build with Maven
       run: |
-        mvn clean deploy -Dgpg.keyname=$GPG_KEY_ID \
+        mvn clean deploy -Dgpg.passphrase=$GPG_PASSPHRASE \
+                         -Dgpg.keyname=$GPG_KEY_ID \
                          -Dgpg.executable=gpg \
                          -Dgpg.pinentry.mode=loopback
       env:
