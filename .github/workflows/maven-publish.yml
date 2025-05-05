@@ -20,6 +20,8 @@ jobs:
           server-id: central
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Import GPG key
         run: |
@@ -28,13 +30,13 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Set GPG passphrase
-        run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}" >> $GITHUB_ENV
+        run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
 
       - name: Set version
         run: mvn versions:set -DnewVersion=${{ github.event.release.tag_name }}
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}
+        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
