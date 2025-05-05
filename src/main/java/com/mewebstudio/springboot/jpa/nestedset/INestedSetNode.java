@@ -45,7 +45,7 @@ public interface INestedSetNode<ID> {
     /**
      * Get the parent node of this node.
      *
-     * @return INestedSetNode<ID> The parent node.
+     * @return INestedSetNode The parent node.
      */
     INestedSetNode<ID> getParent();
 
