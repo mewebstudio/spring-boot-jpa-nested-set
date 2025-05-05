@@ -42,7 +42,8 @@ jobs:
         run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }} -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }}
+        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }}
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
