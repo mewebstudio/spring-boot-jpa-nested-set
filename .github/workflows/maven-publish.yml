@@ -46,5 +46,5 @@ jobs:
                          -Dgpg.executable=gpg \
                          -Dgpg.pinentry.mode=loopback
       env:
-        GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
