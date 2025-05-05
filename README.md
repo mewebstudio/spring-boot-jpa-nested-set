@@ -39,6 +39,22 @@ It is designed to be extended and adapted for any entity that implements the `IN
 
 ---
 
+## Installation
+#### for maven users
+Add the following dependency to your `pom.xml` file:
+```xml
+<dependency>
+  <groupId>com.mewebstudio</groupId>
+  <artifactId>spring-boot-jpa-nested-set</artifactId>
+  <version>0.1.1</version>
+</dependency>
+```
+#### for gradle users
+Add the following dependency to your `build.gradle` file:
+```groovy
+implementation 'com.mewebstudio:spring-boot-jpa-nested-set:0.1.1'
+```
+
 ## 🚀 Usage
 
 ### 1. Example entity class `INestedSetNode<ID>`
