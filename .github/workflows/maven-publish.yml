@@ -20,6 +20,13 @@ jobs:
           server-id: central
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
+          java-package: jdk
+          check-latest: false
+          overwrite-settings: true
+
+      - name: Clean GPG keyring
+        run: |
+          rm -rf ~/.gnupg
 
       - name: Import GPG key
         run: |
@@ -34,9 +41,10 @@ jobs:
         run: mvn versions:set -DnewVersion=${{ github.event.release.tag_name }}
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.GPG_KEYNAME }}
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
