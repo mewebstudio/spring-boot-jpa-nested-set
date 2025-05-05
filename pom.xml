@@ -149,7 +149,7 @@
                                 <arg>loopback</arg>
                             </gpgArguments>
                             <keyname>${env.GPG_KEYNAME}</keyname>
-                            <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
+                            <passphrase>${env.GPG_PASSPHRASE}</passphrase>
                         </configuration>
                     </execution>
                 </executions>

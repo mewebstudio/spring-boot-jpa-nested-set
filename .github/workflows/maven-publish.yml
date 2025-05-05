@@ -31,11 +31,12 @@ jobs:
       - name: Import GPG key
         run: |
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          gpg --list-keys
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Set GPG passphrase
-        run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
+        run: echo "GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
 
       - name: Set GPG keyname
         run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
