@@ -216,7 +216,8 @@ public interface JpaNestedSetRepository<T extends INestedSetNode<ID>, ID> extend
      * Find a node by its left and right values.
      * This method retrieves a single node where the left and right values match the provided values.
      *
-     * @param left int The left value of the node to find.
+     * @param left  int The left value of the node to find.
+     * @param right int The right value of the node to find.
      * @return Optional An optional containing the node if found, otherwise empty.
      */
     Optional<T> findByLeftAndRight(int left, int right);

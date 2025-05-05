@@ -26,7 +26,7 @@ public interface INestedSetNodeResponse<ID> {
     /**
      * Get the list of child nodes of this node.
      *
-     * @return List<INestedSetNodeResponse The list of child nodes.
+     * @return List The list of child nodes.
      */
     List<INestedSetNodeResponse<ID>> getChildren();
 
