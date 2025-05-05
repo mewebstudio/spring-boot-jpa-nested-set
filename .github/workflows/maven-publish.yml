@@ -20,8 +20,6 @@ jobs:
           server-id: central
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
-          gpg-private-key: GPG_PRIVATE_KEY
-          gpg-passphrase: GPG_PASSPHRASE
 
       - name: Import GPG key
         run: |
