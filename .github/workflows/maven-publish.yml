@@ -21,11 +21,19 @@ jobs:
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
 
+      - name: Clean GPG keyring
+        run: |
+          rm -rf ~/.gnupg
+
       - name: Import GPG key
         run: |
           echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Verify GPG keys
+        run: |
+          gpg --list-secret-keys --keyid-format LONG
 
       - name: Set GPG passphrase
         run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_SECRET_KEY_PASSWORD }}" >> $GITHUB_ENV
