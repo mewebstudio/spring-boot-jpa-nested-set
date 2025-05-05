@@ -41,6 +41,10 @@
     <profiles>
         <profile>
             <id>release</id>
+            <properties>
+                <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
+                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+            </properties>
         </profile>
     </profiles>
 
@@ -144,7 +148,6 @@
                             <goal>sign</goal>
                         </goals>
                         <configuration>
-                            <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
