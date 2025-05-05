@@ -5,55 +5,30 @@ on:
     types: [created]
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          server-id: central
-          server-username: MAVEN_CENTRAL_USERNAME
-          server-password: MAVEN_CENTRAL_TOKEN
-          java-package: jdk
-          check-latest: false
-          overwrite-settings: true
+    - name: Import GPG key
+      run: |
+        echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --yes --import
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Clean GPG keyring
-        run: |
-          rm -rf ~/.gnupg
+    - name: Set up gpg-agent
+      run: |
+        echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+        echo RELOADAGENT | gpg-connect-agent
+        echo -e "pinentry-mode loopback\n" >> ~/.gnupg/gpg.conf
 
-      - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
-          gpg --list-keys
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Set GPG passphrase
-        run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
-
-      - name: Set Default GPG Key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          gpg --default-key "$GPG_KEYNAME" --list-secret-keys
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
-
-      - name: Set version
-        run: mvn versions:set -DnewVersion=${{ github.event.release.tag_name }}
-
-      - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.GPG_KEYNAME }}
-        env:
-          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
+    - name: Build with Maven
+      run: |
+        mvn clean deploy -Dgpg.passphrase=$GPG_PASSPHRASE \
+                         -Dgpg.keyname=$GPG_KEY_ID \
+                         -Dgpg.executable=gpg \
+                         -Dgpg.pinentry.mode=loopback
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}

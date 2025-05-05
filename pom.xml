@@ -143,16 +143,20 @@
                         <goals>
                             <goal>sign</goal>
                         </goals>
-                        <configuration>
-                            <gpgArguments>
-                              <arg>--batch</arg>
-                              <arg>--yes</arg>
-                              <arg>--pinentry-mode</arg>
-                              <arg>loopback</arg>
-                            </gpgArguments>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <gpgArguments>
+                        <arg>--batch</arg>
+                        <arg>--yes</arg>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                    <useAgent>false</useAgent>
+                    <defaultKeyring>false</defaultKeyring>
+                    <keyname>${env.GPG_KEY_ID}</keyname>
+                    <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.central</groupId>
