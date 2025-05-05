@@ -71,3 +71,9 @@ public class CategoryService extends AbstractNestedSetService<Category, String> 
 }
 
 ```
+
+## Example implementations
+
+[Spring Boot JPA Nested Set - Java Implementation](https://github.com/mewebstudio/spring-boot-jpa-nested-set-java-impl)
+
+[Spring Boot JPA Nested Set - Kotlin Implementation](https://github.com/mewebstudio/spring-boot-jpa-nested-set-kotlin-impl)
