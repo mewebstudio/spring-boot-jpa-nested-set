@@ -21,35 +21,39 @@ jobs:
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
 
-      - name: Clean GPG keyring
+      - name: Install GPG
         run: |
-          rm -rf ~/.gnupg
+          sudo apt-get update
+          sudo apt-get install -y gnupg
 
-      - name: Start gpg-agent
+      - name: Configure GPG agent
         run: |
-          echo "Starting gpg-agent..."
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
           gpgconf --launch gpg-agent
         shell: bash
 
       - name: Import GPG key
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Preload GPG passphrase
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -o /dev/null --sign
+        env:
+          GPG_PRIVATE_KEY_PASSPHRASE: ${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}
 
       - name: Verify GPG keys
         run: |
           gpg --list-secret-keys --keyid-format LONG
 
-      - name: Set GPG passphrase
-        run: echo "GPG_PASSPHRASE=${{ secrets.GPG_SECRET_KEY_PASSWORD }}" >> $GITHUB_ENV
-
       - name: Set GPG keyname
         run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }} -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }}
+        run: mvn --batch-mode deploy -P release -Dgpg.keyname=${{ env.GPG_KEYNAME }}
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSWORD }}
