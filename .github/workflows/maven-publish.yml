@@ -37,6 +37,15 @@ jobs:
       - name: Set GPG passphrase
         run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
 
+      - name: Set GPG keyname
+        run: echo "GPG_KEYNAME=${{ secrets.GPG_KEYNAME }}" >> $GITHUB_ENV
+
+      - name: Set default GPG key
+        run: |
+          gpg --default-key "$GPG_KEYNAME"
+        env:
+          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
+
       - name: Set version
         run: mvn versions:set -DnewVersion=${{ github.event.release.tag_name }}
 
