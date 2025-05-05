@@ -7,8 +7,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -18,11 +20,18 @@ jobs:
           server-id: ossrh
           server-username: OSSRH_USERNAME
           server-password: OSSRH_TOKEN
-          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
-          gpg-passphrase: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+
+      - name: Import GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+
+      - name: Set GPG passphrase
+        run: echo "MAVEN_GPG_PASSPHRASE=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release
+        run: mvn --batch-mode deploy -P release -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
