@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  * @param <ID> The type of the identifier for the nested set node.
  */
 public abstract class AbstractNestedSetService<T extends INestedSetNode<ID>, ID> {
-    private static final int TEMP_OFFSET = Integer.MIN_VALUE;
+    private static final int TEMP_OFFSET = Integer.MAX_VALUE;
 
     /**
      * The repository to be used for database operations.
