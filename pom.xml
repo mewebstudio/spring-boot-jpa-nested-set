@@ -148,10 +148,11 @@
                             <goal>sign</goal>
                         </goals>
                         <configuration>
-                            <gpgArguments>
-                                <arg>--pinentry-mode</arg>
-                                <arg>loopback</arg>
-                            </gpgArguments>
+                            <keyname>${env.GPG_KEYNAME}</keyname>
+                            <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+                            <files>
+                                <file>${project.build.directory}/${project.build.finalName}.jar</file>
+                            </files>
                         </configuration>
                     </execution>
                 </executions>
