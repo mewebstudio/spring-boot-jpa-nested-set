@@ -158,9 +158,7 @@
                 <version>${nexus-staging-maven-plugin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>central</serverId>
-                    <nexusUrl>https://central.sonatype.com/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <skip>false</skip>
                 </configuration>
             </plugin>
             <plugin>
