@@ -1,6 +1,8 @@
 # Nested Set Tree Utilities for Spring Boot JPA
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Maven badge](https://maven-badges.herokuapp.com/maven-central/com.mewebstudio/spring-boot-jpa-nested-set/badge.svg?style=flat)](https://central.sonatype.com/artifact/com.mewebstudio/spring-boot-jpa-nested-set)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Maven badge](https://maven-badges.herokuapp.com/maven-central/com.mewebstudio/spring-boot-jpa-nested-set/badge.svg?style=flat)](https://central.sonatype.com/artifact/com.mewebstudio/spring-boot-jpa-nested-set)
+[![javadoc](https://javadoc.io/badge2/com.mewebstudio/spring-boot-jpa-nested-set/javadoc.svg)](https://javadoc.io/doc/com.mewebstudio/spring-boot-jpa-nested-set)
 
 This package provides a generic and reusable implementation of the [Nested Set Model](https://en.wikipedia.org/wiki/Nested_set_model) for managing hierarchical data using Spring Boot and JPA.
 
