@@ -1,12 +1,11 @@
 package com.mewebstudio.springboot.jpa.nestedset;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Test for the MoveNodeDirection enum.
- */
+@DisplayName("Test for the MoveNodeDirection enum.")
 class MoveNodeDirectionTest {
     @Test
     void testEnumValues() {

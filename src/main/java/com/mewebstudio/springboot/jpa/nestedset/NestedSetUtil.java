@@ -26,7 +26,7 @@ public class NestedSetUtil {
      * @param <T>     Type of the response node.
      * @return List of top-level nodes with their children.
      */
-    public static <ID, E extends INestedSetNode<ID>, T extends INestedSetNodeResponse<ID>> List<T> tree(
+    public static <ID, E extends INestedSetNode<ID, E>, T extends INestedSetNodeResponse<ID>> List<T> tree(
         List<E> nodes,
         Function<E, T> convert
     ) {
@@ -45,7 +45,7 @@ public class NestedSetUtil {
         // Group children by parent ID
         Map<ID, List<ID>> childrenByParentId = new HashMap<>();
         for (E node : nodes) {
-            INestedSetNode<ID> parent = node.getParent();
+            INestedSetNode<ID, E> parent = node.getParent();
             ID parentId = parent != null ? parent.getId() : null;
             if (parentId != null && nodeMap.containsKey(parentId)) {
                 childrenByParentId.computeIfAbsent(parentId, k -> new ArrayList<>()).add(node.getId());
@@ -78,7 +78,7 @@ public class NestedSetUtil {
         // Find top-level nodes among the provided list
         return nodes.stream()
             .filter(node -> {
-                INestedSetNode<ID> parent = node.getParent();
+                INestedSetNode<ID, E> parent = node.getParent();
                 ID parentId = parent != null ? parent.getId() : null;
                 return parentId == null || !nodeMap.containsKey(parentId);
             })

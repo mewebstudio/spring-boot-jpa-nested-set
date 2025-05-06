@@ -16,16 +16,16 @@ It is designed to be extended and adapted for any entity that implements the `IN
 
 ### Core Components
 
-- **`INestedSetNode<ID>`**  
+- **`INestedSetNode<ID, T extends INestedSetNode<ID, T>>`**  
   Interface that defines the structure of a nested set node (left, right, parent).
 
 - **`INestedSetNodeResponse<ID>`**  
   Interface for representing nodes with children, used for building hierarchical responses.
 
-- **`JpaNestedSetRepository<T, ID>`**  
+- **`JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> extends JpaRepository<T, ID>`**  
   Base JPA repository interface with custom queries for nested set operations (e.g. find ancestors, descendants, siblings).
 
-- **`AbstractNestedSetService<T, ID>`**  
+- **` AbstractNestedSetService<T extends INestedSetNode<ID, T>, ID>`**  
   Abstract service class that implements common logic for creating, moving, and restructuring nodes in a nested set tree.
 
 ---
@@ -48,32 +48,32 @@ Add the following dependency to your `pom.xml` file:
 <dependency>
   <groupId>com.mewebstudio</groupId>
   <artifactId>spring-boot-jpa-nested-set</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
 </dependency>
 ```
 #### for gradle users
 Add the following dependency to your `build.gradle` file:
 ```groovy
-implementation 'com.mewebstudio:spring-boot-jpa-nested-set:0.1.1'
+implementation 'com.mewebstudio:spring-boot-jpa-nested-set:0.1.2'
 ```
 
 ## 🚀 Usage
 
-### 1. Example entity class `INestedSetNode<ID>`
+### 1. Example entity class `INestedSetNode<ID, T extends INestedSetNode<ID, T>>`
 ```java
 @Entity
-public class Category implements INestedSetNode<String> {
+public class Category extends AbstractBaseEntity implements INestedSetNode<String, Category> {
     // implement getId, getLeft, getRight, getParent, etc.
 }
 ```
 
-### 2. Example repository interface `JpaNestedSetRepository<Category, String>`
+### 2. Example repository interface `JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> extends JpaRepository<T, ID>`
 ```java
 public interface CategoryRepository extends JpaNestedSetRepository<Category, String> {
 }
 ```
 
-### 3. Example service class `AbstractNestedSetService<Category, String>`
+### 3. Example service class `AbstractNestedSetService<T extends INestedSetNode<ID, T>, ID>`
 ```java
 // Example service class
 @Service

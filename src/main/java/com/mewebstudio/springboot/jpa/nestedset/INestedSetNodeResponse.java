@@ -33,7 +33,7 @@ public interface INestedSetNodeResponse<ID> {
     /**
      * Set the list of child nodes for this node.
      *
-     * @param children The list of child nodes to set.
+     * @param children List The list of child nodes to set.
      * @return INestedSetNodeResponse The current node with updated children.
      */
     INestedSetNodeResponse<ID> withChildren(List<INestedSetNodeResponse<ID>> children);

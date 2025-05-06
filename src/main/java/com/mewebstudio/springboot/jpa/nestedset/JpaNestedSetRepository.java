@@ -18,7 +18,7 @@ import java.util.Optional;
  * @param <ID> Type of the identifier for the nested set node.
  */
 @NoRepositoryBean
-public interface JpaNestedSetRepository<T extends INestedSetNode<ID>, ID> extends JpaRepository<T, ID> {
+public interface JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> extends JpaRepository<T, ID> {
     /**
      * Find all nodes in the tree, ordered by their left value.
      * This method retrieves all nodes in the tree structure.

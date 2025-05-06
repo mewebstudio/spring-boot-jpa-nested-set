@@ -5,8 +5,9 @@ package com.mewebstudio.springboot.jpa.nestedset;
  * This interface defines the basic properties and methods for a nested set node.
  *
  * @param <ID> Type of the node identifier.
+ * @param <T>  Type of the nested set node.
  */
-public interface INestedSetNode<ID> {
+public interface INestedSetNode<ID, T extends INestedSetNode<ID, T>> {
     /**
      * Get the identifier of the node.
      *
@@ -47,12 +48,12 @@ public interface INestedSetNode<ID> {
      *
      * @return INestedSetNode The parent node.
      */
-    INestedSetNode<ID> getParent();
+    INestedSetNode<ID, T> getParent();
 
     /**
      * Set the parent node of this node.
      *
      * @param parent The parent node to set.
      */
-    void setParent(INestedSetNode<ID> parent);
+    void setParent(INestedSetNode<ID, T> parent);
 }
