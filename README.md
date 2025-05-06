@@ -6,7 +6,7 @@
 
 This package provides a generic and reusable implementation of the [Nested Set Model](https://en.wikipedia.org/wiki/Nested_set_model) for managing hierarchical data using Spring Boot and JPA.
 
-It is designed to be extended and adapted for any entity that implements the `INestedSetNode<ID>` interface.
+It is designed to be extended and adapted for any entity that implements the `INestedSetNode<ID, T extends INestedSetNode<ID, T>>` interface.
 
 ---
 
@@ -25,7 +25,7 @@ It is designed to be extended and adapted for any entity that implements the `IN
 - **`JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> extends JpaRepository<T, ID>`**  
   Base JPA repository interface with custom queries for nested set operations (e.g. find ancestors, descendants, siblings).
 
-- **` AbstractNestedSetService<T extends INestedSetNode<ID, T>, ID>`**  
+- **`AbstractNestedSetService<T extends INestedSetNode<ID, T>, ID>`**  
   Abstract service class that implements common logic for creating, moving, and restructuring nodes in a nested set tree.
 
 ---
@@ -41,7 +41,8 @@ It is designed to be extended and adapted for any entity that implements the `IN
 
 ---
 
-## Installation
+## 📥 Installation
+
 #### for maven users
 Add the following dependency to your `pom.xml` file:
 ```xml
@@ -87,10 +88,13 @@ public class CategoryService extends AbstractNestedSetService<Category, String> 
 
     // ...
 }
-
 ```
 
-## Example implementations
+## 🔁 Other Implementations
+
+[Spring Boot JPA Nested Set (Kotlin Maven Package)](https://github.com/mewebstudio/spring-boot-jpa-nested-set-kotlin)
+
+## 💡 Example Implementations
 
 [Spring Boot JPA Nested Set - Java Implementation](https://github.com/mewebstudio/spring-boot-jpa-nested-set-java-impl)
 
