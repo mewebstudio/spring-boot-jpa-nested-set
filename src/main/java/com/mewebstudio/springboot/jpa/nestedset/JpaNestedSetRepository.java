@@ -47,7 +47,7 @@ public interface JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> ext
     List<T> findLeafNodes();
 
     /**
-     * Find previous sibling of a node by its parentId and left value.
+     * Find the previous sibling of a node by its parentId and left value.
      *
      * @param parentId ID The ID of the parent node. If null, it searches for root nodes.
      * @param left     int The left value of the node to find the previous sibling for.
@@ -65,7 +65,7 @@ public interface JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> ext
     Optional<T> findPrevSibling(@Param("parentId") ID parentId, @Param("left") int left);
 
     /**
-     * Find next sibling of a node by its parentId and left value.
+     * Find the next sibling of a node by its parentId and left value.
      *
      * @param parentId ID The ID of the parent node. If null, it searches for root nodes.
      * @param right    int The right value of the node to find the next sibling for.
@@ -107,8 +107,30 @@ public interface JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> ext
      * @param selfId   ID The ID of the node itself. This is used to exclude the node from the results.
      * @return List A list of all sibling nodes ordered by their left value.
      */
-    @Query("SELECT e FROM #{#entityName} e WHERE e.parent.id = :parentId AND e.id <> :selfId ORDER BY e.left")
+    @Query(
+            """
+            SELECT e FROM #{#entityName} e
+            WHERE (
+                (:parentId IS NULL AND e.parent IS NULL)
+                OR (:parentId IS NOT NULL AND e.parent.id = :parentId)
+            )
+            AND e.id <> :selfId
+            ORDER BY e.left
+            """
+    )
     List<T> findSiblings(@Param("parentId") ID parentId, @Param("selfId") ID selfId);
+
+    @Query(
+            """
+            SELECT e FROM #{#entityName} e
+            WHERE (
+                (:parentId IS NULL AND e.parent IS NULL)
+                OR (:parentId IS NOT NULL AND e.parent.id = :parentId)
+            )
+            ORDER BY e.left
+            """
+    )
+    List<T> findSiblingsIncludingSelf(@Param("parentId") ID parentId);
 
     /**
      * Find all ancestors of a given node.
@@ -233,12 +255,12 @@ public interface JpaNestedSetRepository<T extends INestedSetNode<ID, T>, ID> ext
     List<T> findByParentId(@Param("parentId") ID parentId);
 
     /**
-     * Find all nodes with left value between the specified range.
+     * Find all nodes with the left value between the specified range.
      * This is useful when moving nodes within the nested set.
      *
      * @param left  int The left value of the range.
      * @param right int The right value of the range.
-     * @return List A list of all nodes with left value between the specified range ordered by their left value.
+     * @return List A list of all nodes with a left value between the specified range ordered by their left value.
      */
     @Query("SELECT e FROM #{#entityName} e WHERE e.left BETWEEN :left AND :right ORDER BY e.left")
     List<T> findByLeftBetween(@Param("left") int left, @Param("right") int right);

@@ -8,7 +8,7 @@
     <url>https://github.com/mewebstudio/spring-boot-jpa-nested-set</url>
     <groupId>com.mewebstudio</groupId>
     <artifactId>spring-boot-jpa-nested-set</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.5</version>
 
     <developers>
         <developer>

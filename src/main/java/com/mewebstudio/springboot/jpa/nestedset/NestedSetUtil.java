@@ -52,7 +52,7 @@ public class NestedSetUtil {
             }
         }
 
-        // Build tree by assigning children to parents
+        // Build a tree by assigning children to parents
         List<E> sortedNodes = nodes.stream()
             .sorted((a, b) -> Integer.compare(b.getLeft(), a.getLeft()))
             .toList();

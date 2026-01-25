@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Abstract service class for managing nested set trees.
@@ -144,20 +143,129 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
      */
     @Transactional
     protected T updateNode(T node, T newParent) {
-        if (newParent != null && isDescendant(node, newParent)) {
-            throw new IllegalArgumentException("Cannot move category under its own descendant");
+        // Only process if the parent has changed
+        if (hasParentChanged(node, newParent)) {
+            // Check for cyclic reference
+            if (newParent != null && isDescendant(node, newParent)) {
+                throw new IllegalArgumentException("Cannot move category under its own descendant");
+            }
+
+            moveNodeToNewParent(node, newParent);
         }
 
-        int distance = node.getRight() - node.getLeft() + 1;
-        List<T> allCategories = repository.findAllOrderedByLeft();
-        closeGapInTree(node, distance, allCategories);
-
-        Pair<Integer, Integer> nodePositions = getNodeGap(allCategories, newParent);
-        node.setParent(newParent);
-        node.setLeft(nodePositions.first());
-        node.setRight(nodePositions.second());
-
         return repository.save(node);
+    }
+
+    /**
+     * Check if the parent of a node has changed.
+     *
+     * @param node      T The node to check.
+     * @param newParent T The new parent node.
+     * @return boolean True if the parent has changed, false otherwise.
+     */
+    protected boolean hasParentChanged(T node, T newParent) {
+        ID currentParentId = node.getParent() != null ? node.getParent().getId() : null;
+        ID newParentId = newParent != null ? newParent.getId() : null;
+
+        if (currentParentId == null && newParentId == null) {
+            return false;
+        }
+        if (currentParentId == null || newParentId == null) {
+            return true;
+        }
+        return !currentParentId.equals(newParentId);
+    }
+
+    /**
+     * Move a node and its subtree to a new parent.
+     *
+     * @param node      T The node to be moved.
+     * @param newParent T The new parent node.
+     */
+    @Transactional
+    protected void moveNodeToNewParent(T node, T newParent) {
+        int oldLeft = node.getLeft();
+        int oldRight = node.getRight();
+        int subtreeWidth = oldRight - oldLeft + 1;
+
+        // Get all nodes in the subtree (including the node itself)
+        List<T> subtreeNodes = repository.findSubtree(oldLeft, oldRight);
+
+        // Step 1: Temporarily move subtree out of the way using a large offset
+        moveSubtreeToTempOffset(subtreeNodes);
+
+        // Step 2: Close the gap left by the moved subtree
+        closeGapInTree(oldRight, subtreeWidth);
+
+        // Step 3: Calculate a new position for the subtree
+        int newLeft = calculateNewPosition(newParent, subtreeWidth);
+        int shift = newLeft - oldLeft;
+
+        // Step 4: Move subtree to the new position
+        moveSubtreeFromTempToFinalPosition(oldLeft, oldRight, shift);
+
+        // Update the node's parent reference
+        node.setParent(newParent);
+        // Refresh node's left and right from the saved values
+        node.setLeft(oldLeft + shift);
+        node.setRight(oldRight + shift);
+    }
+
+    /**
+     * Calculate the new position for inserting a subtree under a parent.
+     *
+     * @param parent       T The parent node under which the subtree will be inserted.
+     * @param subtreeWidth int The width of the subtree being moved.
+     * @return int The new left position for the subtree.
+     */
+    @Transactional
+    protected int calculateNewPosition(T parent, int subtreeWidth) {
+        List<T> allNodes = repository.findAllOrderedByLeft().stream()
+            .filter(n -> n.getLeft() < TEMP_OFFSET)
+            .toList();
+
+        if (parent == null) {
+            // Insert at the end as a root node
+            int maxRight = allNodes.stream()
+                .mapToInt(T::getRight)
+                .max()
+                .orElse(0);
+            return maxRight + 1;
+        } else {
+            // Re-fetch the parent to get updated values after gap closing
+            T parentNode = repository.lockNode(parent.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Parent not found: " + parent.getId()));
+
+            int insertAt = parentNode.getRight();
+
+            // Shift nodes to make room for the subtree
+            List<T> nodesToShift = repository.findNodesToShift(insertAt - 1).stream()
+                .filter(n -> n.getLeft() < TEMP_OFFSET)
+                .filter(n -> !n.getId().equals(parentNode.getId()))
+                .toList();
+
+            List<T> updatedNodes = new ArrayList<>();
+            for (T n : nodesToShift) {
+                boolean updated = false;
+                if (n.getLeft() >= insertAt) {
+                    n.setLeft(n.getLeft() + subtreeWidth);
+                    updated = true;
+                }
+                if (n.getRight() >= insertAt) {
+                    n.setRight(n.getRight() + subtreeWidth);
+                    updated = true;
+                }
+                if (updated) {
+                    updatedNodes.add(n);
+                }
+            }
+
+            parentNode.setRight(parentNode.getRight() + subtreeWidth);
+            updatedNodes.add(parentNode);
+            saveAllNodes(updatedNodes);
+
+            return insertAt;
+        }
     }
 
     /**
@@ -168,31 +276,50 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
     @Transactional
     protected void deleteNode(T node) {
         int width = node.getRight() - node.getLeft() + 1;
+        int nodeRight = node.getRight();
+
+        // Delete the subtree
         List<T> subtree = repository.findSubtree(node.getLeft(), node.getRight());
         repository.deleteAll(subtree);
-        closeGapInTree(node, width, repository.findAllOrderedByLeft());
+        repository.flush();
+
+        // Close the gap in the tree
+        closeGapInTree(nodeRight, width);
     }
 
     /**
-     * Closes the gap in the tree after a node is deleted.
+     * Closes the gap in the tree after a node is deleted or moved.
      *
-     * @param entity   T The node that was deleted.
-     * @param width    int The width of the gap to be closed.
-     * @param allNodes List The list of all nodes in the tree.
+     * @param deletedRight int The right value of the deleted/moved node.
+     * @param width        int The width of the gap to be closed.
      */
-    protected void closeGapInTree(T entity, int width, List<T> allNodes) {
-        List<T> updatedNodes = allNodes.stream()
-            .filter(n -> n.getLeft() > entity.getRight())
-            .peek(n -> {
-                n.setLeft(n.getLeft() - width);
-                n.setRight(n.getRight() - width);
-            })
-            .collect(Collectors.toList());
+    @Transactional
+    protected void closeGapInTree(int deletedRight, int width) {
+        List<T> allNodes = repository.findAllOrderedByLeft().stream()
+            .filter(n -> n.getLeft() < TEMP_OFFSET)
+            .toList();
 
-        updatedNodes.addAll(allNodes.stream()
-            .filter(n -> n.getRight() > entity.getRight() && n.getLeft() < entity.getRight())
-            .peek(n -> n.setRight(n.getRight() - width))
-            .toList());
+        List<T> nodesToUpdate = new ArrayList<>();
+
+        // Shift nodes that were to the right of the deleted subtree
+        for (T node : allNodes) {
+            boolean updated = false;
+            if (node.getLeft() > deletedRight) {
+                node.setLeft(node.getLeft() - width);
+                updated = true;
+            }
+            if (node.getRight() > deletedRight) {
+                node.setRight(node.getRight() - width);
+                updated = true;
+            }
+            if (updated) {
+                nodesToUpdate.add(node);
+            }
+        }
+
+        if (!nodesToUpdate.isEmpty()) {
+            saveAllNodes(nodesToUpdate);
+        }
     }
 
     /**
@@ -211,33 +338,34 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
 
         if (sibling.isEmpty()) return node;
 
-        int nodeWidth = node.getRight() - node.getLeft() + 1;
+        int oldNodeLeft = node.getLeft();
+        int oldNodeRight = node.getRight();
+        int nodeWidth = oldNodeRight - oldNodeLeft + 1;
         int siblingWidth = sibling.get().getRight() - sibling.get().getLeft() + 1;
 
-        List<T> nodeSubtree = repository.findSubtree(node.getLeft(), node.getRight());
+        // Calculate the shift for node and sibling
+        int nodeShift = direction == MoveNodeDirection.UP ? -siblingWidth : siblingWidth;
+        int siblingShift = direction == MoveNodeDirection.UP ? nodeWidth : -nodeWidth;
+
+        List<T> nodeSubtree = repository.findSubtree(oldNodeLeft, oldNodeRight);
         List<T> siblingSubtree = repository.findSubtree(sibling.get().getLeft(), sibling.get().getRight());
 
-        nodeSubtree.forEach(n -> {
-            n.setLeft(n.getLeft() + TEMP_OFFSET);
-            n.setRight(n.getRight() + TEMP_OFFSET);
-        });
+        // Step 1: Move the node subtree to temp offset
+        moveSubtreeToTempOffset(nodeSubtree);
 
+        // Step 2: Move sibling subtree
         for (T n : siblingSubtree) {
-            int offset = direction == MoveNodeDirection.UP ? nodeWidth : -nodeWidth;
-            n.setLeft(n.getLeft() + offset);
-            n.setRight(n.getRight() + offset);
+            n.setLeft(n.getLeft() + siblingShift);
+            n.setRight(n.getRight() + siblingShift);
         }
+        saveAllNodes(siblingSubtree);
 
-        for (T n : nodeSubtree) {
-            int offset = direction == MoveNodeDirection.UP ? -TEMP_OFFSET - siblingWidth : -TEMP_OFFSET + siblingWidth;
-            n.setLeft(n.getLeft() + offset);
-            n.setRight(n.getRight() + offset);
-        }
+        // Step 3: Move the node subtree from temp to the final position
+        moveSubtreeFromTempToFinalPosition(oldNodeLeft, oldNodeRight, nodeShift);
 
-        List<T> all = new ArrayList<>();
-        all.addAll(nodeSubtree);
-        all.addAll(siblingSubtree);
-        saveAllNodes(all);
+        // Update the original node reference with new values
+        node.setLeft(oldNodeLeft + nodeShift);
+        node.setRight(oldNodeRight + nodeShift);
 
         return node;
     }
@@ -254,15 +382,15 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
     }
 
     /**
-     * Rebuild the tree structure.
+     * Rebuild the tree structure (recursive helper).
      *
      * @param parent      T The parent node of the current node being processed.
      * @param allNodes    List The list of all nodes in the tree.
      * @param currentLeft Int The current left value of the node being processed.
+     * @param nodesToSave List The list of nodes to be saved after rebuilding.
      * @return Int The right value of the node being processed.
      */
-    @Transactional
-    protected int rebuildTree(T parent, List<T> allNodes, int currentLeft) {
+    protected int rebuildTreeRecursive(T parent, List<T> allNodes, int currentLeft, List<T> nodesToSave) {
         int left = currentLeft;
         ID parentId = parent != null ? parent.getId() : null;
 
@@ -276,10 +404,10 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
 
         for (T child : children) {
             int childLeft = left + 1;
-            int right = rebuildTree(child, allNodes, childLeft);
+            int right = rebuildTreeRecursive(child, allNodes, childLeft, nodesToSave);
             child.setLeft(childLeft);
             child.setRight(right);
-            saveAllNodes(Collections.singletonList(child));
+            nodesToSave.add(child);
             left = right;
         }
 
@@ -295,19 +423,51 @@ public abstract class AbstractNestedSetService<T extends INestedSetNode<ID, T>, 
      */
     @Transactional
     protected int rebuildTree(T parent, List<T> allNodes) {
-        return rebuildTree(parent, allNodes, 0);
+        List<T> nodesToSave = new ArrayList<>();
+        int result = rebuildTreeRecursive(parent, allNodes, 0, nodesToSave);
+        if (!nodesToSave.isEmpty()) {
+            saveAllNodes(nodesToSave);
+        }
+        return result;
+    }
+
+    /**
+     * Move a subtree to a temporary offset position.
+     *
+     * @param subtreeNodes List The list of nodes in the subtree.
+     */
+    protected void moveSubtreeToTempOffset(List<T> subtreeNodes) {
+        for (T n : subtreeNodes) {
+            n.setLeft(n.getLeft() + TEMP_OFFSET);
+            n.setRight(n.getRight() + TEMP_OFFSET);
+        }
+        saveAllNodes(subtreeNodes);
+    }
+
+    /**
+     * Move a subtree from the temporary offset to the final position.
+     *
+     * @param oldLeft int The original left value of the subtree.
+     * @param oldRight int The original right value of the subtree.
+     * @param shift int The shift to apply to the subtree.
+     */
+    protected void moveSubtreeFromTempToFinalPosition(int oldLeft, int oldRight, int shift) {
+        List<T> movedSubtreeNodes = repository.findSubtree(oldLeft + TEMP_OFFSET, oldRight + TEMP_OFFSET);
+        for (T n : movedSubtreeNodes) {
+            n.setLeft(n.getLeft() - TEMP_OFFSET + shift);
+            n.setRight(n.getRight() - TEMP_OFFSET + shift);
+        }
+        saveAllNodes(movedSubtreeNodes);
     }
 
     /**
      * Save all nodes in the tree.
      *
      * @param nodes List The list of nodes to be saved.
-     * @return List The list of saved nodes.
      */
-    protected List<T> saveAllNodes(List<T> nodes) {
-        List<T> savedNodes = repository.saveAll(nodes);
+    protected void saveAllNodes(List<T> nodes) {
+        repository.saveAll(nodes);
         repository.flush();
-        return savedNodes;
     }
 
     /**
